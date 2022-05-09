@@ -252,6 +252,72 @@ class YOLOLoss(nn.Module):
         union = area_a + area_b - inter
         return inter / union  # [A,B]
     
+    def calculate_iou_circle(_box_a, _box_b):
+
+        A = _box_a.size(0)
+        B = _box_b.size(0)
+        _box_a = _box_a.unsqueeze(1).expand(A, B, 4)
+        _box_b = _box_b.unsqueeze(0).expand(A, B, 4)
+
+        r = torch.clamp((_box_b[:, :, 2]-_box_b[:, :, 0])/2, min=(_box_b[:, :, 3]-_box_b[:, :, 1])/2)
+        xcenter = _box_b[:, :, 0]
+        ycenter = _box_b[:, :, 1]
+        xleft = _box_a[:, :, 0] - _box_a[:, :, 2] / 2
+        xright = _box_a[:, :, 0] + _box_a[:, :, 2] / 2
+        ybottom =_box_a[:, :, 1] - _box_a[:, :, 3] / 2
+        ytop = _box_a[:, :, 1] + _box_a[:, :, 3] / 2
+
+        d = [0, 0, 0, 0]
+        d[0]=(xcenter-xleft)/r
+        d[1]=(ycenter-ybottom)/r
+        d[2]=(xright-xcenter)/r
+        d[3]=(ytop-ycenter)/r
+        #for convenience order 0,1,2,3 around the edge.
+
+        # To begin, area is full circle
+        area = torch.tensor(np.ones([A, B]))
+        area = area*math.pi*r*r
+
+        # Check if circle is completely outside rectangle, or a full circle
+        full = True
+        for d_i in d:
+            area[d_i <= -1] = 0
+
+        # this leave only one remaining fully outside case: circle center in an external quadrant, and distance to corner greater than circle radius:
+        #for each adjacent i,j
+        adj_quads = [1,2,3,0]
+        for i in [0,1,2,3]:
+            j=adj_quads[i]
+            area[(d[i]<=0) * (d[j]<=0) * (d[i]*d[i]+d[j]*d[j]>1) * (d[i]<1) * (d[j]<1)] = 0
+
+        # now begin with full circle area  and subtract any areas in the four external half planes
+        a = [0, 0, 0, 0]
+        for d_i in d:
+            if d_i[(d_i>-1) * (d_i<1)].size(0) != 0:
+                index = (d_i>-1) * (d_i<1)
+                area[index] -= 0.5*r[index]*r[index]*(math.pi - 2*torch.asin(d_i[index]) - torch.sin(2*torch.asin(d_i[index])))
+
+        # At this point note we have double counted areas in the four external quadrants, so add back in:
+        #for each adjacent i,j
+
+        for i in [0,1,2,3]:
+            j=adj_quads[i]
+            index = (d[i]<1) * (d[j]<1) * (d[i]*d[i]+d[j]*d[j]< 1)
+            area[index] += 0.25*r[index]*r[index]*(math.pi - 2*torch.asin(d[i][index]) - 2*torch.asin(d[j][index]) - torch.sin(2*torch.asin(d[i][index])) - torch.sin(2*torch.asin(d[j][index])) + 4*torch.sin(torch.asin(d[i][index]))*torch.sin(torch.asin(d[j][index])))
+        #-----------------------------------------------------------#
+        #   计算预测框和真实框各自的面积
+        #-----------------------------------------------------------#
+        area_a = (xright-xleft)*(ytop-ybottom)
+        area_b = torch.tensor(np.ones([A, B]))*math.pi*r*r
+        #-----------------------------------------------------------#
+        #   求IOU
+        #-----------------------------------------------------------#
+        union = area_a + area_b - area
+        print(area)
+        print(area_b)
+        return area / union  # [A,B]
+
+    
     def get_target(self, l, targets, anchors, in_h, in_w):
         #-----------------------------------------------------#
         #   计算一共有多少张图片
@@ -297,7 +363,7 @@ class YOLOLoss(nn.Module):
             #   best_ns:
             #   [每个真实框最大的重合度max_iou, 每一个真实框最重合的先验框的序号]
             #-------------------------------------------------------#
-            best_ns = torch.argmax(self.calculate_iou(gt_box, anchor_shapes), dim=-1)
+            best_ns = torch.argmax(self.calculate_iou_circle(gt_box, anchor_shapes), dim=-1)
 
             for t, best_n in enumerate(best_ns):
                 if best_n not in self.anchors_mask[l]:
@@ -402,7 +468,7 @@ class YOLOLoss(nn.Module):
                 #   计算交并比
                 #   anch_ious       num_true_box, num_anchors
                 #-------------------------------------------------------#
-                anch_ious = self.calculate_iou(batch_target, pred_boxes_for_ignore)
+                anch_ious = self.calculate_iou_circle(batch_target, pred_boxes_for_ignore)
                 #-------------------------------------------------------#
                 #   每个先验框对应真实框的最大重合度
                 #   anch_ious_max   num_anchors

@@ -289,7 +289,7 @@ if __name__ == "__main__":
     else:
         scaler = None
 
-    model_train     = model.train()
+    model_train = model.train()
     #----------------------------#
     #   多卡同步Bn
     #----------------------------#

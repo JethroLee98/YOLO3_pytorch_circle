@@ -32,7 +32,7 @@ train_percent       = 0.9
 #   指向VOC数据集所在的文件夹
 #   默认指向根目录下的VOC数据集
 #-------------------------------------------------------#
-VOCdevkit_path  = 'VOCdevkit'
+VOCdevkit_path  = '/local/rcs/ll3504/datasets/VOCdevkit'
 
 VOCdevkit_sets  = [('2007', 'train'), ('2007', 'val')]
 classes, _      = get_classes(classes_path)

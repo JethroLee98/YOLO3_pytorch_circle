@@ -32,7 +32,8 @@ class YoloDataset(Dataset):
             box[:, [0, 2]] = box[:, [0, 2]] / self.input_shape[1]
             box[:, [1, 3]] = box[:, [1, 3]] / self.input_shape[0]
 
-            box[:, 2:4] = box[:, 2:4] - box[:, 0:2]
+            box[:, 2] = min(box[:, 2] - box[:, 0], box[:, 3] - box[:, 1])
+            box[:, 3] = min(box[:, 2] - box[:, 0], box[:, 3] - box[:, 1])
             box[:, 0:2] = box[:, 0:2] + box[:, 2:4] / 2
         return image, box
 
@@ -81,8 +82,8 @@ class YoloDataset(Dataset):
                 box[:, 0:2][box[:, 0:2]<0] = 0
                 box[:, 2][box[:, 2]>w] = w
                 box[:, 3][box[:, 3]>h] = h
-                box_w = box[:, 2] - box[:, 0]
-                box_h = box[:, 3] - box[:, 1]
+                box_w = min(box[:, 2] - box[:, 0], box[:, 3] - box[:, 1])
+                box_h = min(box[:, 2] - box[:, 0], box[:, 3] - box[:, 1])
                 box = box[np.logical_and(box_w>1, box_h>1)] # discard invalid box
 
             return image_data, box
@@ -148,8 +149,8 @@ class YoloDataset(Dataset):
             box[:, 0:2][box[:, 0:2]<0] = 0
             box[:, 2][box[:, 2]>w] = w
             box[:, 3][box[:, 3]>h] = h
-            box_w = box[:, 2] - box[:, 0]
-            box_h = box[:, 3] - box[:, 1]
+            box_w = min(box[:, 2] - box[:, 0], box[:, 3] - box[:, 1])
+            box_h = min(box[:, 2] - box[:, 0], box[:, 3] - box[:, 1])
             box = box[np.logical_and(box_w>1, box_h>1)] 
         
         return image_data, box

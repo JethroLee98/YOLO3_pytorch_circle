@@ -96,6 +96,67 @@ class YOLOLoss(nn.Module):
         giou            = iou - (enclose_area - union_area) / enclose_area
         
         return giou
+    
+    def box_giou_cirlce(self, b1, b2):
+        """
+        输入为：
+        ----------
+        b1: tensor, shape=(batch, feat_w, feat_h, anchor_num, 4), xywh
+        b2: tensor, shape=(batch, feat_w, feat_h, anchor_num, 4), xywh
+
+        返回为：
+        -------
+        giou: tensor, shape=(batch, feat_w, feat_h, anchor_num, 1)
+        """
+        #----------------------------------------------------#
+        #   求出预测框左上角右下角
+        #----------------------------------------------------#
+        b1_xy       = b1[..., :2]
+        b1_wh       = b1[..., 2:4]
+        b1_wh_half  = b1_wh/2.
+        b1_mins     = b1_xy - b1_wh_half
+        b1_maxes    = b1_xy + b1_wh_half
+        #----------------------------------------------------#
+        #   求出真实框左上角右下角
+        #----------------------------------------------------#
+        b2_xy       = b2[..., :2]
+        b2_wh       = b2[..., 2:4]
+        b2_wh_half  = b2_wh/2.
+        b2_mins     = b2_xy - b2_wh_half
+        b2_maxes    = b2_xy + b2_wh_half
+
+        #----------------------------------------------------#
+        #   求真实框和预测框所有的iou
+        #----------------------------------------------------#
+        r1 = torch.clamp(b1_wh[..., 0]/2, min=b1_wh[..., 1]/2)
+        r2 = torch.clamp(b2_wh[..., 0]/2, min=b2_wh[..., 1]/2)
+        R = torch.clamp(r1, min=r2)
+        r = torch.clamp(r1, max=r2)
+        d = ((b1_xy[..., 0]-b2_xy[..., 0])**2 + (b1_xy[..., 1]-b2_xy[..., 1])**2)**0.5
+        
+        part1 = r*r*torch.acos((d*d + r*r - R*R)/(2*d*r))
+        part2 = R*R*torch.acos((d*d + R*R - r*r)/(2*d*R))
+        part3 = 0.5*torch.sqrt((-d+r+R)*(d+r-R)*(d-r+R)*(d+r+R))
+        intersect_area = part1 + part2 - part3
+        intersect_area[R>=d+r] = math.pi*r[R>=d+r]**2
+        intersect_area[d>=R+r] = 0
+        b1_area         = math.pi*r1*r1
+        b2_area         = math.pi*r2*r2
+        union_area      = b1_area + b2_area - intersect_area
+        iou             = intersect_area / union_area
+
+        #----------------------------------------------------#
+        #   找到包裹两个框的最小框的左上角和右下角
+        #----------------------------------------------------#
+        r3 = R+r+d
+        r3[R>=r+d] = R[R>=r+d]
+        #----------------------------------------------------#
+        #   计算对角线距离
+        #----------------------------------------------------#
+        enclose_area    = math.pi*r3*r3
+        giou            = iou - (enclose_area - union_area) / enclose_area
+        
+        return giou
         
     def forward(self, l, input, targets=None):
         #----------------------------------------------------#
@@ -251,72 +312,41 @@ class YOLOLoss(nn.Module):
         #-----------------------------------------------------------#
         union = area_a + area_b - inter
         return inter / union  # [A,B]
-    
-    def calculate_iou_circle(_box_a, _box_b):
 
-        A = _box_a.size(0)
-        B = _box_b.size(0)
-        _box_a = _box_a.unsqueeze(1).expand(A, B, 4)
-        _box_b = _box_b.unsqueeze(0).expand(A, B, 4)
+    def calculate_iou_circle(box_a, box_b):
 
-        r = torch.clamp((_box_b[:, :, 2]-_box_b[:, :, 0])/2, min=(_box_b[:, :, 3]-_box_b[:, :, 1])/2)
-        xcenter = _box_b[:, :, 0]
-        ycenter = _box_b[:, :, 1]
-        xleft = _box_a[:, :, 0] - _box_a[:, :, 2] / 2
-        xright = _box_a[:, :, 0] + _box_a[:, :, 2] / 2
-        ybottom =_box_a[:, :, 1] - _box_a[:, :, 3] / 2
-        ytop = _box_a[:, :, 1] + _box_a[:, :, 3] / 2
-
-        d = [0, 0, 0, 0]
-        d[0]=(xcenter-xleft)/r
-        d[1]=(ycenter-ybottom)/r
-        d[2]=(xright-xcenter)/r
-        d[3]=(ytop-ycenter)/r
-        #for convenience order 0,1,2,3 around the edge.
-
-        # To begin, area is full circle
-        area = torch.tensor(np.ones([A, B]))
-        area = area*math.pi*r*r
-
-        # Check if circle is completely outside rectangle, or a full circle
-        full = True
-        for d_i in d:
-            area[d_i <= -1] = 0
-
-        # this leave only one remaining fully outside case: circle center in an external quadrant, and distance to corner greater than circle radius:
-        #for each adjacent i,j
-        adj_quads = [1,2,3,0]
-        for i in [0,1,2,3]:
-            j=adj_quads[i]
-            area[(d[i]<=0) * (d[j]<=0) * (d[i]*d[i]+d[j]*d[j]>1) * (d[i]<1) * (d[j]<1)] = 0
-
-        # now begin with full circle area  and subtract any areas in the four external half planes
-        a = [0, 0, 0, 0]
-        for d_i in d:
-            if d_i[(d_i>-1) * (d_i<1)].size(0) != 0:
-                index = (d_i>-1) * (d_i<1)
-                area[index] -= 0.5*r[index]*r[index]*(math.pi - 2*torch.asin(d_i[index]) - torch.sin(2*torch.asin(d_i[index])))
-
-        # At this point note we have double counted areas in the four external quadrants, so add back in:
-        #for each adjacent i,j
-
-        for i in [0,1,2,3]:
-            j=adj_quads[i]
-            index = (d[i]<1) * (d[j]<1) * (d[i]*d[i]+d[j]*d[j]< 1)
-            area[index] += 0.25*r[index]*r[index]*(math.pi - 2*torch.asin(d[i][index]) - 2*torch.asin(d[j][index]) - torch.sin(2*torch.asin(d[i][index])) - torch.sin(2*torch.asin(d[j][index])) + 4*torch.sin(torch.asin(d[i][index]))*torch.sin(torch.asin(d[j][index])))
+        A = box_a.size(0)
+        B = box_b.size(0)
+        box_a = box_a.unsqueeze(1).expand(A, B, 4)
+        box_b = box_b.unsqueeze(0).expand(A, B, 4)
+        
+        r1 = torch.clamp((box_a[:, :, 2]-box_a[:, :, 0])/2, min=(box_a[:, :, 3]-box_a[:, :, 1])/2)
+        r2 = torch.clamp((box_b[:, :, 2]-box_b[:, :, 0])/2, min=(box_b[:, :, 3]-box_b[:, :, 1])/2)
+        R = torch.clamp(r1, min=r2)
+        r = torch.clamp(r1, max=r2)
+        cx1 = (box_a[:, :, 2]+box_a[:, :, 0])/2
+        cy1 = (box_a[:, :, 3]+box_a[:, :, 1])/2
+        cx2 = (box_b[:, :, 2]+box_b[:, :, 0])/2
+        cy2 = (box_b[:, :, 3]+box_b[:, :, 1])/2
+        
+        d = ((cx2-cx1)**2 + (cy2-cy1)**2)**0.5
+        
+        part1 = r*r*torch.acos((d*d + r*r - R*R)/(2*d*r))
+        part2 = R*R*torch.acos((d*d + R*R - r*r)/(2*d*R))
+        part3 = 0.5*torch.sqrt((-d+r+R)*(d+r-R)*(d-r+R)*(d+r+R))
+        intersectionArea = part1 + part2 - part3
+        intersectionArea[R>=d+r] = math.pi*r[R>=d+r]**2
+        intersectionArea[d>=R+r] = 0
         #-----------------------------------------------------------#
         #   计算预测框和真实框各自的面积
         #-----------------------------------------------------------#
-        area_a = (xright-xleft)*(ytop-ybottom)
-        area_b = torch.tensor(np.ones([A, B]))*math.pi*r*r
+        area_a = torch.tensor(np.ones([A, B]))*math.pi*r1*r1
+        area_b = torch.tensor(np.ones([A, B]))*math.pi*r2*r2
         #-----------------------------------------------------------#
         #   求IOU
         #-----------------------------------------------------------#
-        union = area_a + area_b - area
-        print(area)
-        print(area_b)
-        return area / union  # [A,B]
-
+        union = area_a + area_b - intersectionArea
+        return intersectionArea / union  # [A,B]
     
     def get_target(self, l, targets, anchors, in_h, in_w):
         #-----------------------------------------------------#
@@ -468,7 +498,7 @@ class YOLOLoss(nn.Module):
                 #   计算交并比
                 #   anch_ious       num_true_box, num_anchors
                 #-------------------------------------------------------#
-                anch_ious = self.calculate_iou_circle(batch_target, pred_boxes_for_ignore)
+                anch_ious = self.calculate_iou(batch_target, pred_boxes_for_ignore)
                 #-------------------------------------------------------#
                 #   每个先验框对应真实框的最大重合度
                 #   anch_ious_max   num_anchors

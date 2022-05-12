@@ -4,11 +4,6 @@ from collections import OrderedDict
 import torch.nn as nn
 
 
-#---------------------------------------------------------------------#
-#   残差结构
-#   利用一个1x1卷积下降通道数，然后利用一个3x3卷积提取特征并且上升通道数
-#   最后接上一个残差边
-#---------------------------------------------------------------------#
 class BasicBlock(nn.Module):
     def __init__(self, inplanes, planes):
         super(BasicBlock, self).__init__()
@@ -64,11 +59,7 @@ class DarkNet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
-
-    #---------------------------------------------------------------------#
-    #   在每一个layer里面，首先利用一个步长为2的3x3卷积进行下采样
-    #   然后进行残差结构的堆叠
-    #---------------------------------------------------------------------#
+                
     def _make_layer(self, planes, blocks):
         layers = []
         # 下采样，步长为2，卷积核大小为3

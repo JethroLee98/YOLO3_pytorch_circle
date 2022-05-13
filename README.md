@@ -65,28 +65,28 @@ You can specify the parameters listed in the `get_map.py` file by flagging them 
 
 | Original | Change Anchor shape to circle |
 |:-:|:-:|
-| 67.2 % | 31.46% |
+| 67.2 % | 32.12% |
 
-- AP for aeroplane = 0.0113
-- AP for bicycle = 0.5812
-- AP for bird = 0.4209
-- AP for boat = 0.1370
-- AP for bottle = 0.0305
-- AP for bus = 0.2779
-- AP for car = 0.1962
-- AP for cat = 0.5656
-- AP for chair = 0.2505
-- AP for cow = 0.3047
-- AP for diningtable = 0.2324
-- AP for dog = 0.4635
-- AP for horse = 0.5791
-- AP for motorbike = 0.5178
-- AP for person = 0.2800
-- AP for pottedplant = 0.0991
-- AP for sheep = 0.2820
-- AP for sofa = 0.1651
-- AP for train = 0.4641
-- AP for tvmonitor = 0.4337
+- AP for aeroplane = 57.59%
+- AP for bicycle = 44.09%
+- AP for bird = 29.22%
+- AP for boat = 15.74%
+- AP for bottle = 4.49%
+- AP for bus = 46.53%
+- AP for car = 39.68%
+- AP for cat = 50.30%
+- AP for chair = 14.36%
+- AP for cow = 13.04%
+- AP for diningtable = 44.19%
+- AP for dog = 38.74%
+- AP for horse = 30.64%
+- AP for motorbike = 42.81%
+- AP for person = 17.28%
+- AP for pottedplant = 6.74%
+- AP for sheep = 4.35%
+- AP for sofa = 44.91%
+- AP for train = 61.85%
+- AP for tvmonitor = 35.81%
 
 ## Demos
 
@@ -98,7 +98,7 @@ You can specify the parameters listed in the `get_map.py` file by flagging them 
     * YOLOv3 trained on VOC0712 (newest PyTorch weights)
       - https://drive.google.com/file/d/1CWLh-2xHC5Z6pPzPQfYnGEf4mzpKXUel/view?usp=sharing
     * YOLOv3 trained on VOC0712 (change anchor shape to circle)
-      - https://drive.google.com/file/d/1i4Lg_Y-BIFv8kFBd5QzYSL4E39Cz5wrY/view?usp=sharing
+      - https://drive.google.com/file/d/12Z2zaxmkLMNcJRp-5CilRaH_wqxRifFM/view?usp=sharing
 #### Demo
 Change paramters in yolo.py
 ```Shell

@@ -30,30 +30,7 @@
 ## Datasets
 To make things easy, we provide bash scripts to handle the dataset downloads and setup for you.  We also provide simple dataset loaders that inherit `torch.utils.data.Dataset`, making them fully compatible with the `torchvision.datasets` [API](http://pytorch.org/docs/torchvision/datasets.html).
 
-
-### COCO
-Microsoft COCO: Common Objects in Context
-
-##### Download COCO 2014
-```Shell
-# specify a directory for dataset to be downloaded into, else default is ~/data/
-sh data/scripts/COCO2014.sh
-```
-
-### VOC Dataset
-PASCAL VOC: Visual Object Classes
-
-##### Download VOC2007 trainval & test
-```Shell
-# specify a directory for dataset to be downloaded into, else default is ~/data/
-sh data/scripts/VOC2007.sh # <directory>
-```
-
-##### Download VOC2012 trainval
-```Shell
-# specify a directory for dataset to be downloaded into, else default is ~/data/
-sh data/scripts/VOC2012.sh # <directory>
-```
+- same as https://github.com/JethroLee98/SSD_pytorch_circle
 
 ## Training SSD
 - First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:              https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth

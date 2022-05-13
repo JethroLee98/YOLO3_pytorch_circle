@@ -48,14 +48,9 @@ wget https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
 python train.py
 ```
 
-Params used: 
-- batch size = 64
-- learning rate = 1e^-5
-
 - Note:
   * For training, an NVIDIA GPU is strongly recommended for speed.
-  * For instructions on Visdom usage/installation, see the <a href='#installation'>Installation</a> section.
-  * You can pick-up training from a checkpoint by specifying the path as one of the training parameters (again, see `train.py` for options)
+
 
 ## Evaluation
 To evaluate a trained network:

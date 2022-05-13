@@ -16,10 +16,10 @@
 &nbsp;
 
 ## Changes
-- Change the prior anchor shape from rectangles to circles (with different scale of radius) /layers/functions/prior_box.py
-- Change the function of calculate IoU /layers/box_utils.py
-- Change the nms algorithm /layers/box_utils.py
-- Change the preprocess of dataset (change rectangles of bbox to circle)  /data/voc0712.py
+- Change the prior anchor shape from rectangles to circles (with different scale of radius) /model_data/yolo_anchors.txt
+- Change the function of calculate IoU /nets/yolo_training.py
+- Change the function of calculate gIoU /nets/yolo_training.py
+- Change the preprocess of dataset (change rectangles of bbox to circle)  /utils/dataloader.py
 
 
 ## Installation
@@ -32,7 +32,7 @@ To make things easy, we provide bash scripts to handle the dataset downloads and
 
 - same as https://github.com/JethroLee98/SSD_pytorch_circle
 
-## Training SSD
+## Training YOLOv3
 - First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:              https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
 - By default, we assume you have downloaded the file in the `ssd.pytorch/weights` dir:
 
@@ -110,24 +110,6 @@ You can specify the parameters listed in the `eval.py` file by flagging them or 
     * SSD300 trained on VOC0712 (change anchor shape to circle)
       - https://drive.google.com/file/d/1i4Lg_Y-BIFv8kFBd5QzYSL4E39Cz5wrY/view?usp=sharing
       
-### Try the demo notebook
-- Make sure you have [jupyter notebook](http://jupyter.readthedocs.io/en/latest/install.html) installed.
-- Two alternatives for installing jupyter notebook:
-    1. If you installed PyTorch with [conda](https://www.continuum.io/downloads) (recommended), then you should already have it.  (Just  navigate to the ssd.pytorch cloned repo and run):
-    `jupyter notebook`
-
-    2. If using [pip](https://pypi.python.org/pypi/pip):
-
-```Shell
-# make sure pip is upgraded
-pip3 install --upgrade pip
-# install jupyter notebook
-pip install jupyter
-# Run this inside ssd.pytorch
-jupyter notebook
-```
-
-- Now navigate to `demo/demo.ipynb` at http://localhost:8888 (by default) and have at it!
 
 ### Try the webcam demo
 - Works on CPU (may have to tweak `cv2.waitkey` for optimal fps) or on an NVIDIA GPU

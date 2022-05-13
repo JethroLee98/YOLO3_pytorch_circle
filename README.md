@@ -33,18 +33,13 @@ To make things easy, we provide bash scripts to handle the dataset downloads and
 - same as https://github.com/JethroLee98/SSD_pytorch_circle
 
 ## Training YOLOv3
-- First download the fc-reduced [VGG-16](https://arxiv.org/abs/1409.1556) PyTorch base network weights at:              https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-- By default, we assume you have downloaded the file in the `ssd.pytorch/weights` dir:
-
-```Shell
-mkdir weights
-cd weights
-wget https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-```
+- First download the pre-trained YOLOv3 PyTorch base network weights at:              https://drive.google.com/file/d/1mZrJvIZqv1oVkHvs-swNjjsMWPhtUh5_/view?usp=sharing
+- By default, we assume you have downloaded the file in the `/model_data` dir:
 
 - To train SSD using the train script simply specify the parameters listed in `train.py` as a flag or manually change them.
 
 ```Shell
+python voc_annotation.py
 python train.py
 ```
 
@@ -56,10 +51,10 @@ python train.py
 To evaluate a trained network:
 
 ```Shell
-python eval.py
+python get_map.py
 ```
 
-You can specify the parameters listed in the `eval.py` file by flagging them or manually changing them.  
+You can specify the parameters listed in the `get_map.py` file by flagging them or manually changing them.  
 
 
 ## Performance
@@ -95,24 +90,23 @@ You can specify the parameters listed in the `eval.py` file by flagging them or 
 
 ## Demos
 
-### Use a pre-trained SSD network for detection
+### Use a pre-trained YOLOv3 network for detection
 
 #### Download a pre-trained network
-- We are trying to provide PyTorch `state_dicts` (dict of weight tensors) of the latest SSD model definitions trained on different datasets.  
+- We are trying to provide PyTorch `state_dicts` (dict of weight tensors) of the latest YOLO model definitions trained on different datasets.  
 - Currently, we provide the following PyTorch models:
-    * SSD300 trained on VOC0712 (newest PyTorch weights)
-      - https://s3.amazonaws.com/amdegroot-models/ssd300_mAP_77.43_v2.pth
-    * SSD300 trained on VOC0712 (change anchor shape to circle)
+    * YOLOv3 trained on VOC0712 (newest PyTorch weights)
+      - https://drive.google.com/file/d/1CWLh-2xHC5Z6pPzPQfYnGEf4mzpKXUel/view?usp=sharing
+    * YOLOv3 trained on VOC0712 (change anchor shape to circle)
       - https://drive.google.com/file/d/1i4Lg_Y-BIFv8kFBd5QzYSL4E39Cz5wrY/view?usp=sharing
+#### Demo
+Change paramters in yolo.py
+```Shell
+python predict.py
+input img/street.jpg
+```
       
 
-### Try the webcam demo
-- Works on CPU (may have to tweak `cv2.waitkey` for optimal fps) or on an NVIDIA GPU
-- This demo currently requires opencv2+ w/ python bindings and an onboard webcam
-  * You can change the default webcam in `demo/live.py`
-- Install the [imutils](https://github.com/jrosebr1/imutils) package to leverage multi-threading on CPU:
-  * `pip install imutils`
-- Running `python -m demo.live` opens the webcam and begins detecting!
 
 ## References
 - https://github.com/alexweissman/geometry

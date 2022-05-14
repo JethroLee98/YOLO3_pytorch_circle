@@ -61,7 +61,7 @@ You can specify the parameters listed in the `get_map.py` file by flagging them 
 
 #### VOC2007 Test
 
-##### mAP
+##### mAP (threshold set as 0.3, since we change the shape to circle which will reduce the normal IoU between rectangles)
 
 | Original | Change Anchor shape to circle |
 |:-:|:-:|
